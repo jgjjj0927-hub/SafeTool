@@ -1,0 +1,63 @@
+
+name: SafeUnlock MSI Build
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+      - master
+
+    paths:
+      - "SafeUnlock.py"
+      - "setup.py"
+      - "gleb.mp3"
+      - ".github/workflows/build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install cx_Freeze pygame
+
+      - name: Verify files
+        shell: pwsh
+        run: |
+          if (!(Test-Path "SafeUnlock.py")) {
+            throw "SafeUnlock.py missing"
+          }
+
+          if (!(Test-Path "setup.py")) {
+            throw "setup.py missing"
+          }
+
+          if (!(Test-Path "gleb.mp3")) {
+            throw "gleb.mp3 missing"
+          }
+
+      - name: Build MSI
+        run: python setup.py bdist_msi
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeUnlock-MSI
+          path: dist/*.msi
+          if-no-files-found: error
+          retention-days: 14
